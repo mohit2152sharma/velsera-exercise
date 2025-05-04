@@ -1,3 +1,4 @@
+# NOTE: This image is not going to work, using pytorch images will be better
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
