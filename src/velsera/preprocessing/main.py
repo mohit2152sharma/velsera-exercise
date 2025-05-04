@@ -46,22 +46,8 @@ class Preprocess:
         df = pd.concat(args, ignore_index=True)
         return df.sample(frac=1).reset_index(drop=True)
 
-    @staticmethod
-    def train_test_split(
-        df: DataFrame, target_col: str, test_size: float = 0.2, seed: int = 42, **kwargs
-    ) -> tuple[DataFrame, DataFrame, DataFrame, DataFrame]:
-        """Splits the dataframe into test and train"""
-        X = df.drop(columns=target_col, axis=1)
-        y = df[target_col]
-
-        X_train, X_test, y_train, y_test = tts(
-            X, y, test_size=test_size, random_state=seed, **kwargs
-        )
-
-        return X_train, X_test, y_train, y_test  # type: ignore
-
     @log_time
-    def clean(self) -> tuple[DataFrame, DataFrame]:
+    def clean(self) -> DataFrame:
         """Cleans the dataframes"""
         cancer_df = self.remove_empty_rows(
             self.remove_redundant_rows(self.cancer_df, ["id"])
@@ -69,17 +55,8 @@ class Preprocess:
         non_cancer_df = self.remove_empty_rows(
             self.remove_redundant_rows(self.non_cancer_df, ["id"])
         )
-        return cancer_df, non_cancer_df
-
-    @log_time
-    def preprocess(self) -> tuple[DataFrame, ...]:
-        """Preprocesses the dataframes"""
-        cancer_df, non_cancer_df = self.clean()
-        _df = self.shuffle(cancer_df, non_cancer_df)
-        X_train, X_test, y_train, y_test = self.train_test_split(
-            _df, target_col="y", test_size=0.2, seed=42
-        )
-        return X_train, X_test, y_train, y_test
+        logger.info("Cleaned the dataframes")
+        return self.shuffle(cancer_df, non_cancer_df)
 
 
 if __name__ == "__main__":
@@ -91,8 +68,8 @@ if __name__ == "__main__":
     save_func(cancer_df, "Dataset/dfs/cancer.csv")
     save_func(non_cancer_df, "Dataset/dfs/non_cancer.csv")
     preprocess = Preprocess(cancer_df, non_cancer_df)
-    X_train, X_test, y_train, y_test = preprocess.preprocess()
-    print(X_train.head())
-    print(X_test.head())
-    print(y_train.head())
-    print(y_test.head())
+    # X_train, X_test, y_train, y_test = preprocess.preprocess()
+    # print(X_train.head())
+    # print(X_test.head())
+    # print(y_train.head())
+    # print(y_test.head())

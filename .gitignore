@@ -9,3 +9,8 @@ wheels/
 # Virtual environments
 .venv
 Dataset
+
+
+.terraform
+.terraform.lock.hcl
+terraform.tfstate.backup

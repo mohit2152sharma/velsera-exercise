@@ -1,0 +1,79 @@
+name: "Test and Deploy"
+on:
+  push:
+    branches:
+      - main
+      - "*"
+  workflow_dispatch:
+jobs:
+  tests:
+    name: Run pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run tests
+        run: uv run pytest tests/
+
+  prod:
+    name: Deploy model to cloud
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'main'
+    needs: tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: ECR Login
+        uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+
+      - name: Build Webapp Image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          target: webapp
+          tags: |
+            ${{steps.login-ecr.outputs.registry}}/velsera:webapp-latest
+          context: .
+      - name: Build Finetuner Image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          target: finetuner
+          tags: |
+            ${{steps.login-ecr.outputs.registry}}/velsera:finetuner-latest
+          context: .

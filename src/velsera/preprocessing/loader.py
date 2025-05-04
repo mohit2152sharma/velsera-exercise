@@ -46,7 +46,7 @@ class Loader:
                 dfs.append(df)
 
         _df = pd.concat(dfs)
-        _df["y"] = y_label
+        _df["label"] = y_label
         return _df
 
     @log_time
